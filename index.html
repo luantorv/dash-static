@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Management Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard">
+        <header>
+            <h1>Restaurant Management Dashboard</h1>
+        </header>
+
+        <div class="filters-container">
+            <div class="filter-group">
+                <label for="monthFilter">Select a Month</label>
+                <select id="monthFilter">
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="categoryFilter">Select a Category</label>
+                <select id="categoryFilter">
+                    <option value="drink">drink</option>
+                    <option value="food">food</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="kpi-container">
+            <h2 id="totalMonthKpi">Total Sale for June: $0.00</h2>
+            <h2 id="totalCategoryKpi">Total Sale of drink: $0.00</h2>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3 id="chart1Title">Monthly Sale for each Food/Drink in Menu</h3>
+                <canvas id="monthlySaleChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3 id="chart2Title">Daily Sales for Category by Day of the Week</h3>
+                <canvas id="dailySalesChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <h3>Minimum Serve Time for each Drinks Staff in Menu</h3>
+                <canvas id="drinksStaffChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Minimum Serve Time for each Kitchen Staff in Menu</h3>
+                <canvas id="kitchenStaffChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <h3>Top 5 Most Sold Items</h3>
+                <canvas id="topItemsChart"></canvas>
+            </div>
+            <div class="chart-card category-pies">
+                <h3>Category Distribution - Drink and Food</h3>
+                <div class="pies-container">
+                    <div class="pie-wrapper">
+                        <h4>Category Distribution - Drink</h4>
+                        <canvas id="drinkDistChart"></canvas>
+                    </div>
+                    <div class="pie-wrapper">
+                        <h4>Category Distribution - Food</h4>
+                        <canvas id="foodDistChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

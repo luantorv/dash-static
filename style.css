@@ -1,0 +1,106 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #12141c;
+    color: #ffffff;
+    padding: 20px;
+}
+
+.dashboard {
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 30px;
+    font-weight: 700;
+}
+
+.filters-container {
+    display: flex;
+    gap: 40px;
+    margin-bottom: 30px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+}
+
+.filter-group label {
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    color: #a0aabf;
+}
+
+.filter-group select {
+    padding: 10px;
+    background-color: #232733;
+    color: white;
+    border: 1px solid #3a4156;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.kpi-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 40px;
+}
+
+.kpi-container h2 {
+    font-size: 2rem;
+    font-weight: 600;
+    width: 48%;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.chart-card {
+    background-color: transparent;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.chart-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    color: #ffffff;
+}
+
+.category-pies .pies-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    height: calc(100% - 40px);
+}
+
+.pie-wrapper {
+    width: 45%;
+    text-align: center;
+}
+
+.pie-wrapper h4 {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    font-weight: normal;
+}
+
+/* Ajustes responsivos básicos */
+@media (max-width: 1024px) {
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
