@@ -70,8 +70,8 @@ function updateDashboard() {
     const totalMonth = data.reduce((sum, row) => sum + row.Price, 0);
     const totalCat = categoryData.reduce((sum, row) => sum + row.Price, 0);
     
-    document.getElementById('totalMonthKpi').innerText = `Total Sale for ${monthName}: ฿${totalMonth.toFixed(2)}`;
-    document.getElementById('totalCategoryKpi').innerText = `Total Sale of ${category}: ฿${totalCat.toFixed(2)}`;
+    document.getElementById('totalMonthKpi').innerText = `Total Sale for ${monthName}: $${totalMonth.toFixed(2)}`;
+    document.getElementById('totalCategoryKpi').innerText = `Total Sale of ${category}: $${totalCat.toFixed(2)}`;
     
     document.getElementById('chart1Title').innerText = `Monthly Sale for each Food/Drink in Menu (${monthName})`;
     document.getElementById('chart2Title').innerText = `Daily Sales for ${category} by Day of the Week`;
