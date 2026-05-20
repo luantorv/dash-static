@@ -1,44 +1,102 @@
-// 1. Datos Estáticos Simulados (Basados en tu estructura CSV)
-const rawData = [
-    { Date: '1/6/2023', Menu: 'Coke', Price: 1.5, Category: 'drink', Kitchen_Staff: 7, Drinks_Staff: 3, Day_Of_Week: 'Thursday', Serve_Time: 2.5 },
-    { Date: '2/6/2023', Menu: 'Soda', Price: 1.5, Category: 'drink', Kitchen_Staff: 7, Drinks_Staff: 1, Day_Of_Week: 'Friday', Serve_Time: 3.2 },
-    { Date: '3/6/2023', Menu: 'Cheese Burger', Price: 5.0, Category: 'food', Kitchen_Staff: 4, Drinks_Staff: null, Day_Of_Week: 'Saturday', Serve_Time: 12.0 },
-    { Date: '4/6/2023', Menu: 'Classic Burger', Price: 4.5, Category: 'food', Kitchen_Staff: 5, Drinks_Staff: null, Day_Of_Week: 'Sunday', Serve_Time: 10.5 },
-    { Date: '5/6/2023', Menu: 'Coffee', Price: 2.0, Category: 'drink', Kitchen_Staff: 8, Drinks_Staff: 2, Day_Of_Week: 'Monday', Serve_Time: 4.1 },
-    { Date: '6/6/2023', Menu: 'Water', Price: 1.0, Category: 'drink', Kitchen_Staff: 7, Drinks_Staff: 1, Day_Of_Week: 'Tuesday', Serve_Time: 1.0 },
-    { Date: '7/6/2023', Menu: 'Veggie Burger', Price: 5.5, Category: 'food', Kitchen_Staff: 6, Drinks_Staff: null, Day_Of_Week: 'Wednesday', Serve_Time: 14.0 },
-    { Date: '8/6/2023', Menu: 'Strawberry Milkshake', Price: 3.5, Category: 'drink', Kitchen_Staff: 9, Drinks_Staff: 3, Day_Of_Week: 'Thursday', Serve_Time: 6.0 },
-    { Date: '9/6/2023', Menu: 'Supreme Burger', Price: 6.5, Category: 'food', Kitchen_Staff: 10, Drinks_Staff: null, Day_Of_Week: 'Friday', Serve_Time: 15.5 },
-    { Date: '10/6/2023', Menu: 'Tea', Price: 1.8, Category: 'drink', Kitchen_Staff: 7, Drinks_Staff: 2, Day_Of_Week: 'Saturday', Serve_Time: 3.5 },
-    // Datos para Julio (para probar el filtro de mes)
-    { Date: '1/7/2023', Menu: 'Coke', Price: 1.5, Category: 'drink', Kitchen_Staff: 7, Drinks_Staff: 2, Day_Of_Week: 'Saturday', Serve_Time: 2.1 },
-    { Date: '2/7/2023', Menu: 'Cheese Burger', Price: 5.0, Category: 'food', Kitchen_Staff: 5, Drinks_Staff: null, Day_Of_Week: 'Sunday', Serve_Time: 11.0 }
-];
+const FAKESTORE_URL = 'https://fakestoreapi.com/products';
+const MEALDB_URL    = 'https://www.themealdb.com/api/json/v1/1/search.php?s=';
 
-// Generar más datos aleatorios para que los gráficos se vean llenos
-const menuItems = [
-    { name: 'Coke', cat: 'drink', price: 1.5 }, { name: 'Soda', cat: 'drink', price: 1.5 },
-    { name: 'Coffee', cat: 'drink', price: 2.0 }, { name: 'Water', cat: 'drink', price: 1.0 },
-    { name: 'Strawberry Milkshake', cat: 'drink', price: 3.5 }, { name: 'Tea', cat: 'drink', price: 1.8 },
-    { name: 'Chocolate Milkshake', cat: 'drink', price: 3.5 },
-    { name: 'Cheese Burger', cat: 'food', price: 5.0 }, { name: 'Classic Burger', cat: 'food', price: 4.5 },
-    { name: 'Veggie Burger', cat: 'food', price: 5.5 }, { name: 'Supreme Burger', cat: 'food', price: 6.5 }
-];
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-for (let i = 0; i < 300; i++) {
-    let month = Math.random() > 0.5 ? 6 : 7;
-    let item = menuItems[Math.floor(Math.random() * menuItems.length)];
-    rawData.push({
-        Date: `15/${month}/2023`,
-        Menu: item.name,
-        Price: item.price * (Math.floor(Math.random() * 5) + 1), // Cantidades aleatorias
-        Category: item.cat,
-        Kitchen_Staff: Math.floor(Math.random() * 7) + 4, // 4 a 10
-        Drinks_Staff: item.cat === 'drink' ? Math.floor(Math.random() * 3) + 1 : null, // 1 a 3
-        Day_Of_Week: days[Math.floor(Math.random() * days.length)],
-        Serve_Time: Math.random() * 15 + 1 // 1 a 16 minutos
-    });
+// Devuelve un número pseudo-aleatorio estable dado un string semilla.
+// Se usa para asignar campos sintéticos (fecha, día, staff, serve time)
+// de forma determinista por item, evitando que cambien en cada render.
+function seededRandom(seed) {
+    let h = 0;
+    for (let i = 0; i < seed.length; i++) {
+        h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
+    }
+    // Xorshift simple sobre el hash
+    h ^= h >>> 16;
+    h = Math.imul(h, 0x45d9f3b);
+    h ^= h >>> 16;
+    return (h >>> 0) / 0xffffffff; // [0, 1)
+}
+
+function normalizeProduct(product) {
+    const seed = product.id.toString();
+    const month = seededRandom(seed + 'm') > 0.5 ? 6 : 7;
+    const day   = days[Math.floor(seededRandom(seed + 'd') * days.length)];
+    return {
+        Date:         `1/${month}/2023`,
+        Menu:         product.title,
+        Price:        product.price,
+        Category:     product.category,
+        Kitchen_Staff: Math.floor(seededRandom(seed + 'k') * 7) + 4,
+        Drinks_Staff:  null,
+        Day_Of_Week:  day,
+        Serve_Time:   seededRandom(seed + 's') * 15 + 1,
+    };
+}
+
+function normalizeMeal(meal) {
+    const seed  = meal.idMeal;
+    const month = seededRandom(seed + 'm') > 0.5 ? 6 : 7;
+    const day   = days[Math.floor(seededRandom(seed + 'd') * days.length)];
+    // Precio derivado de la cantidad de ingredientes presentes
+    const ingredientCount = Array.from({ length: 20 }, (_, i) => meal[`strIngredient${i + 1}`])
+        .filter(v => v && v.trim() !== '').length;
+    const price = parseFloat((ingredientCount * 1.5 + seededRandom(seed + 'p') * 5).toFixed(2));
+    return {
+        Date:         `1/${month}/2023`,
+        Menu:         meal.strMeal,
+        Price:        price,
+        Category:     meal.strCategory,
+        Kitchen_Staff: Math.floor(seededRandom(seed + 'k') * 7) + 4,
+        Drinks_Staff:  null,
+        Day_Of_Week:  day,
+        Serve_Time:   seededRandom(seed + 's') * 15 + 1,
+    };
+}
+
+let rawData = [];
+
+function setLoadingState(isLoading) {
+    const kpi1 = document.getElementById('totalMonthKpi');
+    const kpi2 = document.getElementById('totalCategoryKpi');
+    if (isLoading) {
+        kpi1.innerText = 'Loading data...';
+        kpi2.innerText = '';
+    }
+}
+
+function setErrorState(message) {
+    const kpi1 = document.getElementById('totalMonthKpi');
+    const kpi2 = document.getElementById('totalCategoryKpi');
+    kpi1.innerText = `Error: ${message}`;
+    kpi2.innerText = 'Could not load data from APIs.';
+}
+
+async function loadData() {
+    setLoadingState(true);
+    try {
+        const [productsRes, mealsRes] = await Promise.all([
+            fetch(FAKESTORE_URL),
+            fetch(MEALDB_URL),
+        ]);
+
+        if (!productsRes.ok) throw new Error(`FakeStore API responded with ${productsRes.status}`);
+        if (!mealsRes.ok)   throw new Error(`MealDB API responded with ${mealsRes.status}`);
+
+        const products = await productsRes.json();
+        const mealsBody = await mealsRes.json();
+        const meals = Array.isArray(mealsBody.meals) ? mealsBody.meals : [];
+
+        rawData = [
+            ...products.map(normalizeProduct),
+            ...meals.map(normalizeMeal),
+        ];
+
+        updateDashboard();
+    } catch (err) {
+        console.error(err);
+        setErrorState(err.message);
+    }
 }
 
 // 2. Variables Globales para Gráficos
@@ -230,4 +288,4 @@ document.getElementById('monthFilter').addEventListener('change', updateDashboar
 document.getElementById('categoryFilter').addEventListener('change', updateDashboard);
 
 // Iniciar al cargar la página
-window.onload = updateDashboard;
+window.onload = loadData;
