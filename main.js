@@ -55,6 +55,12 @@ function normalizeMeal(meal) {
     };
 }
 
+const PRICE_RANGES = {
+    low:    { min: 0,   max: 20  },
+    medium: { min: 20,  max: 100 },
+    high:   { min: 100, max: Infinity },
+};
+
 let rawData = [];
 
 function setLoadingState(isLoading) {
@@ -109,39 +115,40 @@ Chart.defaults.color = '#a0aabf';
 Chart.defaults.borderColor = '#232733';
 
 // 3. Funciones de Filtrado y Agrupación
+function getPriceFilteredData() {
+    const priceRange = document.getElementById('priceFilter').value;
+    const { min, max } = PRICE_RANGES[priceRange];
+    return rawData.filter(row => row.Price >= min && row.Price < max);
+}
+
 function getFilteredData() {
-    const month = document.getElementById('monthFilter').value;
     const source = document.getElementById('categoryFilter').value;
-    
-    return rawData.filter(row => {
-        const rowMonth = row.Date.split('/')[1];
-        return rowMonth == month && row.Source === source;
-    });
+    return getPriceFilteredData().filter(row => row.Source === source);
 }
 
 function updateDashboard() {
+    const filteredByPrice = getPriceFilteredData();
     const data = getFilteredData();
-    const monthName = document.getElementById('monthFilter').options[document.getElementById('monthFilter').selectedIndex].text;
+    const priceLabel = document.getElementById('priceFilter').options[document.getElementById('priceFilter').selectedIndex].text;
     const source = document.getElementById('categoryFilter').value;
-    const categoryData = data.filter(d => d.Source === source);
 
     // Actualizar KPIs
-    const totalMonth = data.reduce((sum, row) => sum + row.Price, 0);
-    const totalCat = categoryData.reduce((sum, row) => sum + row.Price, 0);
-    
-    document.getElementById('totalMonthKpi').innerText = `Total Sale for ${monthName}: $${totalMonth.toFixed(2)}`;
-    document.getElementById('totalCategoryKpi').innerText = `Total Sale of ${source}: $${totalCat.toFixed(2)}`;
-    
-    document.getElementById('chart1Title').innerText = `Monthly Sale for each Food/Drink in Menu (${monthName})`;
-    document.getElementById('chart2Title').innerText = `Daily Sales for ${source} by Day of the Week`;
+    const totalPrice = filteredByPrice.reduce((sum, row) => sum + row.Price, 0);
+    const totalSource = data.reduce((sum, row) => sum + row.Price, 0);
+
+    document.getElementById('totalMonthKpi').innerText = `Total Sale (${priceLabel}): $${totalPrice.toFixed(2)}`;
+    document.getElementById('totalCategoryKpi').innerText = `Total Sale of ${source} (${priceLabel}): $${totalSource.toFixed(2)}`;
+
+    document.getElementById('chart1Title').innerText = `Sale by Item — ${source} (${priceLabel})`;
+    document.getElementById('chart2Title').innerText = `Daily Sales — ${source} (${priceLabel})`;
 
     renderMonthlySaleChart(data);
-    renderDailySalesChart(categoryData);
-    renderStaffChart(data, 'product', 'drinksStaffChart', 'Drinks_Staff', [1,2,3]);
-    renderStaffChart(data, 'meal', 'kitchenStaffChart', 'Kitchen_Staff', [4,5,6,7,8,9,10]);
+    renderDailySalesChart(data);
+    renderStaffChart(filteredByPrice, 'product', 'drinksStaffChart', 'Kitchen_Staff', [4,5,6,7,8,9,10]);
+    renderStaffChart(filteredByPrice, 'meal', 'kitchenStaffChart', 'Kitchen_Staff', [4,5,6,7,8,9,10]);
     renderTopItemsChart(data);
-    renderPieChart(data, 'product', 'drinkDistChart');
-    renderPieChart(data, 'meal', 'foodDistChart');
+    renderPieChart(filteredByPrice, 'product', 'drinkDistChart');
+    renderPieChart(filteredByPrice, 'meal', 'foodDistChart');
 }
 
 // 4. Funciones de Renderizado de Gráficos
@@ -285,7 +292,7 @@ function destroyChart(id) {
 }
 
 // 5. Event Listeners y Arranque Inicial
-document.getElementById('monthFilter').addEventListener('change', updateDashboard);
+document.getElementById('priceFilter').addEventListener('change', updateDashboard);
 document.getElementById('categoryFilter').addEventListener('change', updateDashboard);
 
 // Iniciar al cargar la página
