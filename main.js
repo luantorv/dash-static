@@ -1,3 +1,4 @@
+// 1. Carga de Datos desde APIs
 const FAKESTORE_URL = 'https://fakestoreapi.com/products';
 const MEALDB_URL    = 'https://www.themealdb.com/api/json/v1/1/search.php?s=';
 
@@ -26,7 +27,7 @@ function normalizeProduct(product) {
         Date:         `1/${month}/2023`,
         Menu:         product.title,
         Price:        product.price,
-        Category:     product.category,
+        Source:        'product',
         Kitchen_Staff: Math.floor(seededRandom(seed + 'k') * 7) + 4,
         Drinks_Staff:  null,
         Day_Of_Week:  day,
@@ -46,7 +47,7 @@ function normalizeMeal(meal) {
         Date:         `1/${month}/2023`,
         Menu:         meal.strMeal,
         Price:        price,
-        Category:     meal.strCategory,
+        Source:        'meal',
         Kitchen_Staff: Math.floor(seededRandom(seed + 'k') * 7) + 4,
         Drinks_Staff:  null,
         Day_Of_Week:  day,
@@ -110,37 +111,37 @@ Chart.defaults.borderColor = '#232733';
 // 3. Funciones de Filtrado y Agrupación
 function getFilteredData() {
     const month = document.getElementById('monthFilter').value;
-    const category = document.getElementById('categoryFilter').value;
+    const source = document.getElementById('categoryFilter').value;
     
     return rawData.filter(row => {
         const rowMonth = row.Date.split('/')[1];
-        return rowMonth == month;
+        return rowMonth == month && row.Source === source;
     });
 }
 
 function updateDashboard() {
     const data = getFilteredData();
     const monthName = document.getElementById('monthFilter').options[document.getElementById('monthFilter').selectedIndex].text;
-    const category = document.getElementById('categoryFilter').value;
-    const categoryData = data.filter(d => d.Category === category);
+    const source = document.getElementById('categoryFilter').value;
+    const categoryData = data.filter(d => d.Source === source);
 
     // Actualizar KPIs
     const totalMonth = data.reduce((sum, row) => sum + row.Price, 0);
     const totalCat = categoryData.reduce((sum, row) => sum + row.Price, 0);
     
     document.getElementById('totalMonthKpi').innerText = `Total Sale for ${monthName}: $${totalMonth.toFixed(2)}`;
-    document.getElementById('totalCategoryKpi').innerText = `Total Sale of ${category}: $${totalCat.toFixed(2)}`;
+    document.getElementById('totalCategoryKpi').innerText = `Total Sale of ${source}: $${totalCat.toFixed(2)}`;
     
     document.getElementById('chart1Title').innerText = `Monthly Sale for each Food/Drink in Menu (${monthName})`;
-    document.getElementById('chart2Title').innerText = `Daily Sales for ${category} by Day of the Week`;
+    document.getElementById('chart2Title').innerText = `Daily Sales for ${source} by Day of the Week`;
 
     renderMonthlySaleChart(data);
     renderDailySalesChart(categoryData);
-    renderStaffChart(data, 'drink', 'drinksStaffChart', 'Drinks_Staff', [1,2,3]);
-    renderStaffChart(data, 'food', 'kitchenStaffChart', 'Kitchen_Staff', [4,5,6,7,8,9,10]);
+    renderStaffChart(data, 'product', 'drinksStaffChart', 'Drinks_Staff', [1,2,3]);
+    renderStaffChart(data, 'meal', 'kitchenStaffChart', 'Kitchen_Staff', [4,5,6,7,8,9,10]);
     renderTopItemsChart(data);
-    renderPieChart(data, 'drink', 'drinkDistChart');
-    renderPieChart(data, 'food', 'foodDistChart');
+    renderPieChart(data, 'product', 'drinkDistChart');
+    renderPieChart(data, 'meal', 'foodDistChart');
 }
 
 // 4. Funciones de Renderizado de Gráficos
@@ -194,7 +195,7 @@ function renderDailySalesChart(data) {
 }
 
 function renderStaffChart(data, category, canvasId, staffField, staffLevels) {
-    const catData = data.filter(d => d.Category === category);
+    const catData = data.filter(d => d.Source === category);
     const menus = [...new Set(catData.map(d => d.Menu))];
     
     const datasets = staffLevels.map((level, index) => {
@@ -221,7 +222,7 @@ function renderStaffChart(data, category, canvasId, staffField, staffLevels) {
 function renderTopItemsChart(data) {
     const grouped = {};
     data.forEach(d => {
-        if(!grouped[d.Menu]) grouped[d.Menu] = { price: 0, cat: d.Category };
+        if(!grouped[d.Menu]) grouped[d.Menu] = { price: 0, cat: d.Source };
         grouped[d.Menu].price += d.Price;
     });
 
@@ -231,7 +232,7 @@ function renderTopItemsChart(data) {
 
     const labels = sorted.map(item => item[0]);
     const values = sorted.map(item => item[1].price);
-    const bgColors = sorted.map(item => item[1].cat === 'food' ? '#82cfff' : '#0070e0');
+    const bgColors = sorted.map(item => item[1].cat === 'meal' ? '#82cfff' : '#0070e0');
 
     destroyChart('topItemsChart');
     charts['topItemsChart'] = new Chart(document.getElementById('topItemsChart'), {
@@ -249,7 +250,7 @@ function renderTopItemsChart(data) {
 }
 
 function renderPieChart(data, category, canvasId) {
-    const catData = data.filter(d => d.Category === category);
+    const catData = data.filter(d => d.Source === category);
     const grouped = {};
     catData.forEach(d => {
         grouped[d.Menu] = (grouped[d.Menu] || 0) + 1; // Distribución por cantidad
