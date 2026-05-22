@@ -1,44 +1,109 @@
-// 1. Datos Estáticos Simulados (Basados en tu estructura CSV)
-const rawData = [
-    { Date: '1/6/2023', Menu: 'Coke', Price: 1.5, Category: 'drink', Kitchen_Staff: 7, Drinks_Staff: 3, Day_Of_Week: 'Thursday', Serve_Time: 2.5 },
-    { Date: '2/6/2023', Menu: 'Soda', Price: 1.5, Category: 'drink', Kitchen_Staff: 7, Drinks_Staff: 1, Day_Of_Week: 'Friday', Serve_Time: 3.2 },
-    { Date: '3/6/2023', Menu: 'Cheese Burger', Price: 5.0, Category: 'food', Kitchen_Staff: 4, Drinks_Staff: null, Day_Of_Week: 'Saturday', Serve_Time: 12.0 },
-    { Date: '4/6/2023', Menu: 'Classic Burger', Price: 4.5, Category: 'food', Kitchen_Staff: 5, Drinks_Staff: null, Day_Of_Week: 'Sunday', Serve_Time: 10.5 },
-    { Date: '5/6/2023', Menu: 'Coffee', Price: 2.0, Category: 'drink', Kitchen_Staff: 8, Drinks_Staff: 2, Day_Of_Week: 'Monday', Serve_Time: 4.1 },
-    { Date: '6/6/2023', Menu: 'Water', Price: 1.0, Category: 'drink', Kitchen_Staff: 7, Drinks_Staff: 1, Day_Of_Week: 'Tuesday', Serve_Time: 1.0 },
-    { Date: '7/6/2023', Menu: 'Veggie Burger', Price: 5.5, Category: 'food', Kitchen_Staff: 6, Drinks_Staff: null, Day_Of_Week: 'Wednesday', Serve_Time: 14.0 },
-    { Date: '8/6/2023', Menu: 'Strawberry Milkshake', Price: 3.5, Category: 'drink', Kitchen_Staff: 9, Drinks_Staff: 3, Day_Of_Week: 'Thursday', Serve_Time: 6.0 },
-    { Date: '9/6/2023', Menu: 'Supreme Burger', Price: 6.5, Category: 'food', Kitchen_Staff: 10, Drinks_Staff: null, Day_Of_Week: 'Friday', Serve_Time: 15.5 },
-    { Date: '10/6/2023', Menu: 'Tea', Price: 1.8, Category: 'drink', Kitchen_Staff: 7, Drinks_Staff: 2, Day_Of_Week: 'Saturday', Serve_Time: 3.5 },
-    // Datos para Julio (para probar el filtro de mes)
-    { Date: '1/7/2023', Menu: 'Coke', Price: 1.5, Category: 'drink', Kitchen_Staff: 7, Drinks_Staff: 2, Day_Of_Week: 'Saturday', Serve_Time: 2.1 },
-    { Date: '2/7/2023', Menu: 'Cheese Burger', Price: 5.0, Category: 'food', Kitchen_Staff: 5, Drinks_Staff: null, Day_Of_Week: 'Sunday', Serve_Time: 11.0 }
-];
+// 1. Carga de Datos desde APIs
+const FAKESTORE_URL = 'https://fakestoreapi.com/products';
+const MEALDB_URL    = 'https://www.themealdb.com/api/json/v1/1/search.php?s=';
 
-// Generar más datos aleatorios para que los gráficos se vean llenos
-const menuItems = [
-    { name: 'Coke', cat: 'drink', price: 1.5 }, { name: 'Soda', cat: 'drink', price: 1.5 },
-    { name: 'Coffee', cat: 'drink', price: 2.0 }, { name: 'Water', cat: 'drink', price: 1.0 },
-    { name: 'Strawberry Milkshake', cat: 'drink', price: 3.5 }, { name: 'Tea', cat: 'drink', price: 1.8 },
-    { name: 'Chocolate Milkshake', cat: 'drink', price: 3.5 },
-    { name: 'Cheese Burger', cat: 'food', price: 5.0 }, { name: 'Classic Burger', cat: 'food', price: 4.5 },
-    { name: 'Veggie Burger', cat: 'food', price: 5.5 }, { name: 'Supreme Burger', cat: 'food', price: 6.5 }
-];
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-for (let i = 0; i < 300; i++) {
-    let month = Math.random() > 0.5 ? 6 : 7;
-    let item = menuItems[Math.floor(Math.random() * menuItems.length)];
-    rawData.push({
-        Date: `15/${month}/2023`,
-        Menu: item.name,
-        Price: item.price * (Math.floor(Math.random() * 5) + 1), // Cantidades aleatorias
-        Category: item.cat,
-        Kitchen_Staff: Math.floor(Math.random() * 7) + 4, // 4 a 10
-        Drinks_Staff: item.cat === 'drink' ? Math.floor(Math.random() * 3) + 1 : null, // 1 a 3
-        Day_Of_Week: days[Math.floor(Math.random() * days.length)],
-        Serve_Time: Math.random() * 15 + 1 // 1 a 16 minutos
-    });
+// Devuelve un número pseudo-aleatorio estable dado un string semilla.
+// Se usa para asignar campos sintéticos (fecha, día, staff, serve time)
+// de forma determinista por item, evitando que cambien en cada render.
+function seededRandom(seed) {
+    let h = 0;
+    for (let i = 0; i < seed.length; i++) {
+        h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
+    }
+    // Xorshift simple sobre el hash
+    h ^= h >>> 16;
+    h = Math.imul(h, 0x45d9f3b);
+    h ^= h >>> 16;
+    return (h >>> 0) / 0xffffffff; // [0, 1)
+}
+
+function normalizeProduct(product) {
+    const seed = product.id.toString();
+    const month = seededRandom(seed + 'm') > 0.5 ? 6 : 7;
+    const day   = days[Math.floor(seededRandom(seed + 'd') * days.length)];
+    return {
+        Date:         `1/${month}/2023`,
+        Menu:         product.title,
+        Price:        product.price,
+        Source:        'product',
+        Kitchen_Staff: Math.floor(seededRandom(seed + 'k') * 7) + 4,
+        Drinks_Staff:  null,
+        Day_Of_Week:  day,
+        Serve_Time:   seededRandom(seed + 's') * 15 + 1,
+    };
+}
+
+function normalizeMeal(meal) {
+    const seed  = meal.idMeal;
+    const month = seededRandom(seed + 'm') > 0.5 ? 6 : 7;
+    const day   = days[Math.floor(seededRandom(seed + 'd') * days.length)];
+    // Precio derivado de la cantidad de ingredientes presentes
+    const ingredientCount = Array.from({ length: 20 }, (_, i) => meal[`strIngredient${i + 1}`])
+        .filter(v => v && v.trim() !== '').length;
+    const price = parseFloat((ingredientCount * 1.5 + seededRandom(seed + 'p') * 5).toFixed(2));
+    return {
+        Date:         `1/${month}/2023`,
+        Menu:         meal.strMeal,
+        Price:        price,
+        Source:        'meal',
+        Kitchen_Staff: Math.floor(seededRandom(seed + 'k') * 7) + 4,
+        Drinks_Staff:  null,
+        Day_Of_Week:  day,
+        Serve_Time:   seededRandom(seed + 's') * 15 + 1,
+    };
+}
+
+const PRICE_RANGES = {
+    low:    { min: 0,   max: 20  },
+    medium: { min: 20,  max: 100 },
+    high:   { min: 100, max: Infinity },
+};
+
+let rawData = [];
+
+function setLoadingState(isLoading) {
+    const kpi1 = document.getElementById('totalMonthKpi');
+    const kpi2 = document.getElementById('totalCategoryKpi');
+    if (isLoading) {
+        kpi1.innerText = 'Loading data...';
+        kpi2.innerText = '';
+    }
+}
+
+function setErrorState(message) {
+    const kpi1 = document.getElementById('totalMonthKpi');
+    const kpi2 = document.getElementById('totalCategoryKpi');
+    kpi1.innerText = `Error: ${message}`;
+    kpi2.innerText = 'Could not load data from APIs.';
+}
+
+async function loadData() {
+    setLoadingState(true);
+    try {
+        const [productsRes, mealsRes] = await Promise.all([
+            fetch(FAKESTORE_URL),
+            fetch(MEALDB_URL),
+        ]);
+
+        if (!productsRes.ok) throw new Error(`FakeStore API responded with ${productsRes.status}`);
+        if (!mealsRes.ok)   throw new Error(`MealDB API responded with ${mealsRes.status}`);
+
+        const products = await productsRes.json();
+        const mealsBody = await mealsRes.json();
+        const meals = Array.isArray(mealsBody.meals) ? mealsBody.meals : [];
+
+        rawData = [
+            ...products.map(normalizeProduct),
+            ...meals.map(normalizeMeal),
+        ];
+
+        updateDashboard();
+    } catch (err) {
+        console.error(err);
+        setErrorState(err.message);
+    }
 }
 
 // 2. Variables Globales para Gráficos
@@ -50,39 +115,40 @@ Chart.defaults.color = '#a0aabf';
 Chart.defaults.borderColor = '#232733';
 
 // 3. Funciones de Filtrado y Agrupación
+function getPriceFilteredData() {
+    const priceRange = document.getElementById('priceFilter').value;
+    const { min, max } = PRICE_RANGES[priceRange];
+    return rawData.filter(row => row.Price >= min && row.Price < max);
+}
+
 function getFilteredData() {
-    const month = document.getElementById('monthFilter').value;
-    const category = document.getElementById('categoryFilter').value;
-    
-    return rawData.filter(row => {
-        const rowMonth = row.Date.split('/')[1];
-        return rowMonth == month;
-    });
+    const source = document.getElementById('categoryFilter').value;
+    return getPriceFilteredData().filter(row => row.Source === source);
 }
 
 function updateDashboard() {
+    const filteredByPrice = getPriceFilteredData();
     const data = getFilteredData();
-    const monthName = document.getElementById('monthFilter').options[document.getElementById('monthFilter').selectedIndex].text;
-    const category = document.getElementById('categoryFilter').value;
-    const categoryData = data.filter(d => d.Category === category);
+    const priceLabel = document.getElementById('priceFilter').options[document.getElementById('priceFilter').selectedIndex].text;
+    const source = document.getElementById('categoryFilter').value;
 
     // Actualizar KPIs
-    const totalMonth = data.reduce((sum, row) => sum + row.Price, 0);
-    const totalCat = categoryData.reduce((sum, row) => sum + row.Price, 0);
-    
-    document.getElementById('totalMonthKpi').innerText = `Total Sale for ${monthName}: $${totalMonth.toFixed(2)}`;
-    document.getElementById('totalCategoryKpi').innerText = `Total Sale of ${category}: $${totalCat.toFixed(2)}`;
-    
-    document.getElementById('chart1Title').innerText = `Monthly Sale for each Food/Drink in Menu (${monthName})`;
-    document.getElementById('chart2Title').innerText = `Daily Sales for ${category} by Day of the Week`;
+    const totalPrice = filteredByPrice.reduce((sum, row) => sum + row.Price, 0);
+    const totalSource = data.reduce((sum, row) => sum + row.Price, 0);
+
+    document.getElementById('totalMonthKpi').innerText = `Total Sale (${priceLabel}): $${totalPrice.toFixed(2)}`;
+    document.getElementById('totalCategoryKpi').innerText = `Total Sale of ${source} (${priceLabel}): $${totalSource.toFixed(2)}`;
+
+    document.getElementById('chart1Title').innerText = `Sale by Item — ${source} (${priceLabel})`;
+    document.getElementById('chart2Title').innerText = `Daily Sales — ${source} (${priceLabel})`;
 
     renderMonthlySaleChart(data);
-    renderDailySalesChart(categoryData);
-    renderStaffChart(data, 'drink', 'drinksStaffChart', 'Drinks_Staff', [1,2,3]);
-    renderStaffChart(data, 'food', 'kitchenStaffChart', 'Kitchen_Staff', [4,5,6,7,8,9,10]);
+    renderDailySalesChart(data);
+    renderStaffChart(filteredByPrice, 'product', 'drinksStaffChart', 'Kitchen_Staff', [4,5,6,7,8,9,10]);
+    renderStaffChart(filteredByPrice, 'meal', 'kitchenStaffChart', 'Kitchen_Staff', [4,5,6,7,8,9,10]);
     renderTopItemsChart(data);
-    renderPieChart(data, 'drink', 'drinkDistChart');
-    renderPieChart(data, 'food', 'foodDistChart');
+    renderPieChart(filteredByPrice, 'product', 'drinkDistChart');
+    renderPieChart(filteredByPrice, 'meal', 'foodDistChart');
 }
 
 // 4. Funciones de Renderizado de Gráficos
@@ -136,7 +202,7 @@ function renderDailySalesChart(data) {
 }
 
 function renderStaffChart(data, category, canvasId, staffField, staffLevels) {
-    const catData = data.filter(d => d.Category === category);
+    const catData = data.filter(d => d.Source === category);
     const menus = [...new Set(catData.map(d => d.Menu))];
     
     const datasets = staffLevels.map((level, index) => {
@@ -163,7 +229,7 @@ function renderStaffChart(data, category, canvasId, staffField, staffLevels) {
 function renderTopItemsChart(data) {
     const grouped = {};
     data.forEach(d => {
-        if(!grouped[d.Menu]) grouped[d.Menu] = { price: 0, cat: d.Category };
+        if(!grouped[d.Menu]) grouped[d.Menu] = { price: 0, cat: d.Source };
         grouped[d.Menu].price += d.Price;
     });
 
@@ -173,7 +239,7 @@ function renderTopItemsChart(data) {
 
     const labels = sorted.map(item => item[0]);
     const values = sorted.map(item => item[1].price);
-    const bgColors = sorted.map(item => item[1].cat === 'food' ? '#82cfff' : '#0070e0');
+    const bgColors = sorted.map(item => item[1].cat === 'meal' ? '#82cfff' : '#0070e0');
 
     destroyChart('topItemsChart');
     charts['topItemsChart'] = new Chart(document.getElementById('topItemsChart'), {
@@ -191,7 +257,7 @@ function renderTopItemsChart(data) {
 }
 
 function renderPieChart(data, category, canvasId) {
-    const catData = data.filter(d => d.Category === category);
+    const catData = data.filter(d => d.Source === category);
     const grouped = {};
     catData.forEach(d => {
         grouped[d.Menu] = (grouped[d.Menu] || 0) + 1; // Distribución por cantidad
@@ -226,8 +292,8 @@ function destroyChart(id) {
 }
 
 // 5. Event Listeners y Arranque Inicial
-document.getElementById('monthFilter').addEventListener('change', updateDashboard);
+document.getElementById('priceFilter').addEventListener('change', updateDashboard);
 document.getElementById('categoryFilter').addEventListener('change', updateDashboard);
 
 // Iniciar al cargar la página
-window.onload = updateDashboard;
+window.onload = loadData;
